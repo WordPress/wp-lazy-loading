@@ -1,0 +1,31 @@
+{
+  "name": "wordpress/wp-lazy-loading",
+  "description": "WordPress feature plugin for testing and experimenting with automatically adding the loading HTML attribute.",
+  "version": "1.0",
+  "license": "GPL-2.0-or-later",
+  "type": "wordpress-plugin",
+  "keywords": [
+    "feature plugin",
+    "lazy loading"
+  ],
+  "homepage": "https://wordpress.org/plugins/wp-lazy-loading/",
+  "support": {
+    "issues": "https://github.com/WordPress/wp-lazy-loading/issues"
+  },
+  "require": {
+    "php": ">=5.6"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.3",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.4",
+    "wp-coding-standards/wpcs": "^2",
+    "phpcompatibility/phpcompatibility-wp": "^2",
+    "phpunit/phpunit": ">4.8.20 <6.0"
+  },
+  "scripts": {
+    "format": "phpcbf",
+    "lint": "phpcs",
+    "lint:errors": "@lint -n",
+    "test": "phpunit"
+  }
+}
