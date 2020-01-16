@@ -1,6 +1,8 @@
 sudo: false
 dist: xenial
 language: php
+services:
+  - mysql
 cache:
   directories:
     - vendor
