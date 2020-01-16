@@ -75,8 +75,10 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_unfiltered = sprintf( $content, $img, $iframe );
 		$content_filtered   = sprintf( $content, $lazy_img, $lazy_iframe );
 
-		add_filter( 'wp_lazy_load_content_media', '__return_true' );
+		add_filter( 'wp_get_lazy_load_tags', '__return_true' );
+
 		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
+		remove_filter( 'wp_get_lazy_load_tags', '__return_true' );
 	}
 
 	/**
@@ -90,7 +92,9 @@ class Tests_Media extends WP_UnitTestCase {
 			%1$s';
 		$content = sprintf( $content, $img );
 
-		add_filter( 'wp_lazy_load_content_media', '__return_false' );
+		add_filter( 'wp_get_lazy_load_tags', '__return_false' );
+
 		$this->assertSame( $content, wp_add_lazy_load_attributes( $content ) );
+		remove_filter( 'wp_get_lazy_load_tags', '__return_false' );
 	}
 }
