@@ -12,6 +12,11 @@
   "support": {
     "issues": "https://github.com/WordPress/wp-lazy-loading/issues"
   },
+  "config": {
+    "platform": {
+      "php": "5.6"
+    }
+  },
   "require": {
     "php": ">=5.6"
   },
