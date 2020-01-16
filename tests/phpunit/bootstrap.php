@@ -30,6 +30,9 @@ if ( false !== getenv( 'WP_TESTS_DIR' ) ) {
 	$test_root = dirname( dirname( dirname( dirname( TESTS_PLUGIN_DIR ) ) ) ) . '/tests/phpunit';
 }
 
+// Ensure the methods annotated with the (unfixed) lazy-loading ticket are run.
+define( 'WP_TESTS_FORCE_KNOWN_BUGS', true );
+
 // Ensure the plugin is loaded.
 $GLOBALS['wp_tests_options'] = array(
 	'active_plugins' => array( basename( TESTS_PLUGIN_DIR ) . '/wp-lazy-loading.php' ),
