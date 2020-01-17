@@ -83,7 +83,7 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
  * @return array Modified attributes.
  */
 function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
-	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) ) {
+	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && ! isset( $attr['loading'] ) ) {
 		$attr['loading'] = 'lazy';
 	}
 
