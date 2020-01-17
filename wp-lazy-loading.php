@@ -62,7 +62,7 @@ add_action( 'plugins_loaded', '_wp_lazy_loading_initialize_filters', 1 );
  * @return string Modified tag.
  */
 function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
-	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && false === strpos( $avatar, ' loading=' ) ) {
+	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && false === strpos( $avatar, ' loading=' ) && false === strpos( $avatar, 'skip-lazy' ) ) {
 		$avatar = str_replace( '<img ', '<img loading="lazy" ', $avatar );
 	}
 
@@ -83,7 +83,7 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
  * @return array Modified attributes.
  */
 function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
-	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) ) {
+	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && ( ! array_key_exists( 'class', $attr ) || false === strpos( $attr['class'], 'skip-lazy' ) ) && ! array_key_exists( 'data-skip-lazy', $attr ) ) {
 		$attr['loading'] = 'lazy';
 	}
 
@@ -148,7 +148,7 @@ function wp_add_lazy_load_attributes( $content ) {
 	return preg_replace_callback(
 		'/<(' . implode( '|', $tags ) . ')(\s)[^>]+>/',
 		function( array $matches ) {
-			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
+			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) && false === strpos( $matches[0], 'skip-lazy' ) ) {
 				$tag   = $matches[1];
 				$space = $matches[2];
 

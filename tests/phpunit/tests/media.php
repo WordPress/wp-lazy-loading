@@ -33,6 +33,9 @@ class Tests_Media extends WP_UnitTestCase {
 		// The following should not be modified because there already is a 'loading' attribute.
 		$img_eager = str_replace( ' />', ' loading="eager" />', $img );
 
+		// The following should not be modified either, because 'skip-lazy' is present.
+		$img_skiplazy = str_replace( 'class="', 'class="skip-lazy ', $img );
+
 		$content = '
 			<p>Image, standard.</p>
 			%1$s
@@ -46,11 +49,14 @@ class Tests_Media extends WP_UnitTestCase {
 			<p>Image, with pre-existing "loading" attribute.</p>
 			%5$s
 
+			<p>Image, with "skip-lazy" set, not to be modified.</p>
+			%6$s
+
 			<p>Iframe, standard. Should not be modified by default.</p>
 			%4$s';
 
-		$content_unfiltered = sprintf( $content, $img, $img_xhtml, $img_html5, $iframe, $img_eager );
-		$content_filtered   = sprintf( $content, $lazy_img, $lazy_img_xhtml, $lazy_img_html5, $iframe, $img_eager );
+		$content_unfiltered = sprintf( $content, $img, $img_xhtml, $img_html5, $iframe, $img_eager, $img_skiplazy );
+		$content_filtered   = sprintf( $content, $lazy_img, $lazy_img_xhtml, $lazy_img_html5, $iframe, $img_eager, $img_skiplazy );
 
 		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
 	}
