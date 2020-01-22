@@ -52,7 +52,7 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_unfiltered = sprintf( $content, $img, $img_xhtml, $img_html5, $iframe, $img_eager );
 		$content_filtered   = sprintf( $content, $lazy_img, $lazy_img_xhtml, $lazy_img_html5, $iframe, $img_eager );
 
-		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
+		$this->assertSame( $content_filtered, _wp_filter_html_tags( $content_unfiltered ) );
 	}
 
 	/**
@@ -75,10 +75,22 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_unfiltered = sprintf( $content, $img, $iframe );
 		$content_filtered   = sprintf( $content, $lazy_img, $lazy_iframe );
 
-		add_filter( 'wp_get_lazy_load_tags', '__return_true' );
+		add_filter( 'wp_add_lazy_loading_to', '__return_true' );
+		add_filter( 'wp_get_tags_to_filter', array( $this, 'wp_get_tags_to_filter_callback' ) );
+		add_filter( 'wp_filter_iframe_tags', array( $this, 'wp_filter_iframe_tags_callback' ) );
 
-		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
-		remove_filter( 'wp_get_lazy_load_tags', '__return_true' );
+		$this->assertSame( $content_filtered, _wp_filter_html_tags( $content_unfiltered ) );
+		remove_filter( 'wp_add_lazy_loading_to', '__return_true' );
+		remove_filter( 'wp_get_tags_to_filter', array( $this, 'wp_get_tags_to_filter_callback' ) );
+		remove_filter( 'wp_filter_iframe_tags', array( $this, 'wp_filter_iframe_tags_callback' ) );
+	}
+
+	function wp_get_tags_to_filter_callback() {
+		return array( 'img', 'iframe' );
+	}
+
+	function wp_filter_iframe_tags_callback( $tag_html ) {
+		return str_replace( '<iframe', '<iframe loading="lazy"', $tag_html );
 	}
 
 	/**
@@ -92,9 +104,9 @@ class Tests_Media extends WP_UnitTestCase {
 			%1$s';
 		$content = sprintf( $content, $img );
 
-		add_filter( 'wp_get_lazy_load_tags', '__return_false' );
+		add_filter( 'wp_add_lazy_loading_to', '__return_false' );
 
-		$this->assertSame( $content, wp_add_lazy_load_attributes( $content ) );
-		remove_filter( 'wp_get_lazy_load_tags', '__return_false' );
+		$this->assertSame( $content, _wp_filter_html_tags( $content ) );
+		remove_filter( 'wp_add_lazy_loading_to', '__return_false' );
 	}
 }

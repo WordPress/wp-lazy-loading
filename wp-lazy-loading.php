@@ -45,11 +45,17 @@ function _wp_lazy_loading_initialize_filters() {
 	add_filter( 'get_avatar', '_wp_lazy_loading_add_attribute_to_avatar' );
 
 	// Exprerimental, testing only.
+	// To test with iframes: add `?wp-lazy-loading-iframes` to the current URL.
 	if ( isset( $_GET['wp-lazy-loading-iframes'] ) ) {
+		// Add to all tags.
+		add_filter( 'wp_add_lazy_loading_to', '__return_true' );
+
+		// Add filterig for the iframe tag.
 		add_filter( 'wp_get_tags_to_filter', 'wp_lazy_loading_add_iframe_tag', 10, 2 );
+
+		// Add the actual attribute, and filter the tag after that.
 		add_filter( 'wp_filter_iframe_tags', 'wp_add_lazy_loading_to_iframe_tags', 10, 3 );
 	}
-
 }
 
 add_action( 'plugins_loaded', '_wp_lazy_loading_initialize_filters', 1 );
@@ -92,7 +98,7 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
  * @return array Modified attributes.
  */
 function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
-	if ( wp_add_lazy_loading_to( 'img', 'wp_get_attachment_image_attributes' ) && ! isset( $attr['loading'] ) ) {
+	if ( wp_add_lazy_loading_to( 'img', 'wp_get_attachment_image' ) && ! isset( $attr['loading'] ) ) {
 		$attr['loading'] = 'lazy';
 	}
 
@@ -100,14 +106,14 @@ function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
 }
 
 
-// Helper functions to enable adding of `loading="lazy"` to iframes.
+// Helper functions to enable adding of `loading="lazy"` to iframes (not for merging for now).
 
 function wp_add_lazy_loading_to_iframe_tags( $tag_html, $content, $context = null ) {
 	if ( wp_add_lazy_loading_to( 'iframe', $context ) && ! preg_match( '/\bloading\s*=/', $tag_html ) ) {
 		$unfiltered = $tag_html;
 		$tag_html   = str_replace( '<iframe', '<iframe loading="lazy"', $tag_html );
 
-		// See the filter in
+		// See the docs for the similar 'wp_add_lazy_loading_to_img_tags'.
 		$tag_html = apply_filters( 'wp_add_lazy_loading_to_iframe_tags', $tag_html, $unfiltered, $content, $context );
 	}
 
@@ -131,10 +137,12 @@ function wp_lazy_loading_add_iframe_tag( $default_tags, $context ) {
  * @since (TBD)
  *
  * @param string  $tag_name The tag name.
- * @param string  $context Additional context, like the current filter name.
+ * @param string  $context Additional context, like the current filter name or the function name from where this was called.
  * @return boolean Whether to add the attribute.
  */
 function wp_add_lazy_loading_to( $tag_name, $context ) {
+	// By default add to all 'img' tags.
+	// See https://github.com/whatwg/html/issues/2806
 	$add = ( 'img' === $tag_name );
 
 	/**
@@ -144,9 +152,9 @@ function wp_add_lazy_loading_to( $tag_name, $context ) {
 	 *
 	 * @param boolean $add Defatls value.
 	 * @param string  $tag_name The tag name.
-	 * @param string  $context Additional context, like the current filter name.
+	 * @param string  $context Additional context, like the current filter name or the function name from where this was called.
 	 */
-	return (bool) apply_filters( $add, $tag_name, $context );
+	return (bool) apply_filters( 'wp_add_lazy_loading_to', $add, $tag_name, $context );
 }
 
 /**
@@ -154,10 +162,10 @@ function wp_add_lazy_loading_to( $tag_name, $context ) {
  *
  * @since (TBD)
  *
- * @param string $context Optional. Additional context for use when filtering the list of tag names.
+ * @param string $context Context for use when filtering the list of tag names. For example `current_filter()`.
  * @return array List of tags to filter on display.
  */
-function wp_get_tags_to_filter( $context = null ) {
+function wp_get_tags_to_filter( $context ) {
 	// For adding the `loading` attribute. See https://github.com/whatwg/html/issues/2806.
 	$default_tags = array( 'img' );
 
