@@ -11,8 +11,6 @@ if ( function_exists( 'xdebug_disable' ) ) {
 	xdebug_disable();
 }
 
-require_once TESTS_PLUGIN_DIR . '/vendor/autoload.php';
-
 if ( false !== getenv( 'WP_PLUGIN_DIR' ) ) {
 	define( 'WP_PLUGIN_DIR', getenv( 'WP_PLUGIN_DIR' ) );
 } else {
