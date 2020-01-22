@@ -19,3 +19,11 @@ Description: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-
 HTML Specification (not finalized): https://github.com/whatwg/html/pull/3752
 
 Currently the "loading" attribute is supported only in Chromium browsers. Coming soon to Firefox and Edge.
+
+To test, install and enable the plugin. It will automatically add loading="lazy" attributes to all images in all new and existing posts, pages, and comments on the front-end.
+
+Then use a Chromium based browser (Chrome, Opera, latest Android, etc.) and visit the site. Best would be to test over a slower connection, with a phone, etc. and test web pages that have a lot of images, like gallery posts.
+
+Things to look for:
+* Obvious bugs, for example images are missing.
+* Try to scroll down as soon as the page loads. All images should be at their places, and the page shouldn't "jump" if/when images are loaded.
