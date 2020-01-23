@@ -32,10 +32,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
 	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
-		// Before parsing blocks and shortcodes.
-		// TODO: Comments do not support images. Revisit.
-		// TODO: This should not exclude images from dynamic blocks and shortcodes. Look at fixing the filter priority.
-		add_filter( $filter, 'wp_add_lazy_load_attributes', 8 );
+		// After parsing blocks and shortcodes.
+		add_filter( $filter, 'wp_add_lazy_load_attributes', 25 );
 	}
 
 	// The following filters are only needed while this is a feature plugin.
@@ -141,9 +139,25 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 
 	return preg_replace_callback(
 		'/<img\s[^>]+>/',
-		function( array $matches ) {
+		function( array $matches ) use( $content, $context ) {
 			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				return str_replace( '<img', '<img loading="lazy"', $matches[0] );
+				$old_html = $matches[0];
+				$new_html = str_replace( '<img', '<img loading="lazy"', $old_html );
+
+				/**
+				 * Filters the tag HTML after adding the `loading` attribute.
+				 *
+				 * The variable part of the filter name is the filtered tag's name. For example for `img`
+				 * the filter would become `wp_add_lazy_loading_to_img`.
+				 *
+				 * @since (TBD)
+				 *
+				 * @param string $new_html The tag's HTML after adding the attribute.
+				 * @param string $old_html The tag's HTML before adding the attribute.
+				 * @param string $content The HTML content that is being filtered.
+				 * @param string $context Optional. Additional context. Defaults to `current_filter()`.
+				 */
+				return apply_filters( 'wp_add_lazy_loading_to_img', $new_html, $old_html, $content, $context );
 			}
 
 			return $matches[0];
@@ -151,4 +165,3 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 		$content
 	);
 }
-
