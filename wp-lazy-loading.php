@@ -62,7 +62,7 @@ add_action( 'plugins_loaded', '_wp_lazy_loading_initialize_filters', 1 );
  * @return string Modified tag.
  */
 function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
-	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && false === strpos( $avatar, ' loading=' ) ) {
+	if ( wp_lazy_loading_enabled( 'img', 'get_avatar' ) && false === strpos( $avatar, ' loading=' ) ) {
 		$avatar = str_replace( '<img ', '<img loading="lazy" ', $avatar );
 	}
 
@@ -83,7 +83,7 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
  * @return array Modified attributes.
  */
 function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
-	if ( in_array( 'img', wp_get_lazy_load_tags(), true ) && ! isset( $attr['loading'] ) ) {
+	if ( wp_lazy_loading_enabled( 'img', 'wp_get_attachment_image' ) && ! isset( $attr['loading'] ) ) {
 		$attr['loading'] = 'lazy';
 	}
 
@@ -94,37 +94,31 @@ function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
 // The following functions will be merged to core.
 
 /**
- * Get the HTML tags to lazy-load.
+ * Determine whether to add the `loading` attribute to the specified tag in the specified context.
  *
  * @since (TBD)
  *
- * @return array List of tags to add loading="lazy" attributes to.
+ * @param string  $tag_name The tag name.
+ * @param string  $context Additional context, like the current filter name or the function name from where this was called.
+ * @return boolean Whether to add the attribute.
  */
-function wp_get_lazy_load_tags() {
-	// See https://github.com/whatwg/html/issues/2806.
-	$supported_tags = array( 'img', 'iframe' );
+function wp_lazy_loading_enabled( $tag_name, $context ) {
+	// By default add to all 'img' tags.
+	// See https://github.com/whatwg/html/issues/2806
+	$default = ( 'img' === $tag_name );
 
 	/**
-	 * Filters on which HTML tags to add `loading="lazy"`.
+	 * Filters whether to add the `loading` attribute to the specified tag in the specified context.
 	 *
 	 * @since (TBD)
 	 *
-	 * @param array $tags List of tags to add loading="lazy" attributes to. Default is an array with 'img'.
-	 *                    Supports passing a boolean: `false` removes all tags, `true` resets the tags to the default value.
-	 *                    Example: `add_filter( 'wp_get_lazy_load_tags', '__return_true' );` will enable it for images and iframes.
-	 *                    Note that the HTML specs are not finalized yet. See https://github.com/whatwg/html/pull/3752/files,
-	 *                    and support for iframes has been postponed (for now).
+	 * @param boolean $default Defatls value.
+	 * @param string  $tag_name The tag name.
+	 * @param string  $context Additional context, like the current filter name or the function name from where this was called.
 	 */
-	$tags = apply_filters( 'wp_get_lazy_load_tags', array( 'img' ) );
-
-	// Support a boolean, false to disable, true to reset to default.
-	if ( ! is_array( $tags ) ) {
-		return $tags === true ? $supported_tags : array();
-	}
-
-	// Only include supported tags.
-	return array_values( array_intersect( $tags, $supported_tags ) );
+	return (bool) apply_filters( 'wp_lazy_loading_enabled', $default, $tag_name, $context );
 }
+
 
 // TODO: update docs.
 /**
@@ -136,10 +130,24 @@ function wp_get_lazy_load_tags() {
  * @since (TBD)
  *
  * @param string $content The raw post content to be filtered.
+ * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
  * @return string Converted content with 'loading' attributes added to images.
  */
-function wp_add_lazy_load_attributes( $content ) {
-	$tags = wp_get_lazy_load_tags();
+function wp_add_lazy_load_attributes( $content, $context = null ) {
+	$tags = array();
+
+	if ( null === $context ) {
+		$context = current_filter();
+	}
+
+	if ( wp_lazy_loading_enabled( 'img', $context ) ) {
+		$tags[] = 'img';
+	}
+
+	// Experimental. Will be removed when merging unless the HTML specs are updated by that time.
+	if ( wp_lazy_loading_enabled( 'iframe', $context ) ) {
+		$tags[] = 'iframe';
+	}
 
 	if ( empty( $tags ) ) {
 		return $content;
