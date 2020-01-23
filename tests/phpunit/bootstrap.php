@@ -11,6 +11,10 @@ if ( function_exists( 'xdebug_disable' ) ) {
 	xdebug_disable();
 }
 
+if ( file_exists( TESTS_PLUGIN_DIR . '/vendor/autoload.php' ) ) {
+	require_once TESTS_PLUGIN_DIR . '/vendor/autoload.php';
+}
+
 if ( false !== getenv( 'WP_PLUGIN_DIR' ) ) {
 	define( 'WP_PLUGIN_DIR', getenv( 'WP_PLUGIN_DIR' ) );
 } else {
