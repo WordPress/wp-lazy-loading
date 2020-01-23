@@ -119,31 +119,31 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 	return (bool) apply_filters( 'wp_lazy_loading_enabled', $default, $tag_name, $context );
 }
 
-
-// TODO: update docs.
 /**
- * Add `loading="lazy"` to `img` HTML tags if enabled.
+ * Add `loading="lazy"` to `img` HTML tags.
  *
  * Currently the "loading" attribute is only supported for `img`, and is enabled by default.
  *
  * @since (TBD)
  *
- * @param string $content The raw post content to be filtered.
+ * @param string $content The HTML content to be filtered.
  * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
  * @return string Converted content with 'loading' attributes added to images.
  */
 function wp_add_lazy_load_attributes( $content, $context = null ) {
+	if ( null === $context ) {
+		$context = current_filter();
+	}
+
 	if ( ! wp_lazy_loading_enabled( 'img', $context ) ) {
 		return $content;
 	}
 
 	return preg_replace_callback(
-		'/<img(\s)[^>]+>/',
+		'/<img\s[^>]+>/',
 		function( array $matches ) {
 			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				$space = $matches[1];
-
-				return str_replace( '<img' . $space, '<img' . $space . 'loading="lazy" ', $matches[0] );
+				return str_replace( '<img', '<img loading="lazy"', $matches[0] );
 			}
 
 			return $matches[0];
