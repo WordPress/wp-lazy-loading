@@ -46,7 +46,7 @@ class Tests_Media extends WP_UnitTestCase {
 			<p>Image, with pre-existing "loading" attribute.</p>
 			%5$s
 
-			<p>Iframe, standard. Should not be modified by default.</p>
+			<p>Iframe, standard. Should not be modified.</p>
 			%4$s';
 
 		$content_unfiltered = sprintf( $content, $img, $img_xhtml, $img_html5, $iframe, $img_eager );
@@ -59,21 +59,16 @@ class Tests_Media extends WP_UnitTestCase {
 	 * @ticket 44427
 	 */
 	function test_wp_lazy_load_content_media_opted_in() {
-		$img    = get_image_tag( self::$large_id, '', '', '', 'medium' );
-		$iframe = '<iframe src="https://www.example.com"></iframe>';
+		$img = get_image_tag( self::$large_id, '', '', '', 'medium' );
 
-		$lazy_img    = str_replace( '<img ', '<img loading="lazy" ', $img );
-		$lazy_iframe = str_replace( '<iframe ', '<iframe loading="lazy" ', $iframe );
+		$lazy_img = str_replace( '<img ', '<img loading="lazy" ', $img );
 
 		$content = '
 			<p>Image, standard.</p>
-			%1$s
+			%1$s';
 
-			<p>Iframe, standard.</p>
-			%2$s';
-
-		$content_unfiltered = sprintf( $content, $img, $iframe );
-		$content_filtered   = sprintf( $content, $lazy_img, $lazy_iframe );
+		$content_unfiltered = sprintf( $content, $img );
+		$content_filtered   = sprintf( $content, $lazy_img );
 
 		// Enable globally for all tags.
 		add_filter( 'wp_lazy_loading_enabled', '__return_true' );

@@ -122,10 +122,9 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 
 // TODO: update docs.
 /**
- * Add `loading="lazy"` to `img` and/or `iframe` HTML tags.
+ * Add `loading="lazy"` to `img` HTML tags if enabled.
  *
  * Currently the "loading" attribute is only supported for `img`, and is enabled by default.
- * Support for `iframe` is for testing purposes only.
  *
  * @since (TBD)
  *
@@ -134,33 +133,17 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
  * @return string Converted content with 'loading' attributes added to images.
  */
 function wp_add_lazy_load_attributes( $content, $context = null ) {
-	$tags = array();
-
-	if ( null === $context ) {
-		$context = current_filter();
-	}
-
-	if ( wp_lazy_loading_enabled( 'img', $context ) ) {
-		$tags[] = 'img';
-	}
-
-	// Experimental. Will be removed when merging unless the HTML specs are updated by that time.
-	if ( wp_lazy_loading_enabled( 'iframe', $context ) ) {
-		$tags[] = 'iframe';
-	}
-
-	if ( empty( $tags ) ) {
+	if ( ! wp_lazy_loading_enabled( 'img', $context ) ) {
 		return $content;
 	}
 
 	return preg_replace_callback(
-		'/<(' . implode( '|', $tags ) . ')(\s)[^>]+>/',
+		'/<img(\s)[^>]+>/',
 		function( array $matches ) {
 			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				$tag   = $matches[1];
-				$space = $matches[2];
+				$space = $matches[1];
 
-				return str_replace( '<' . $tag . $space, '<' . $tag . $space . 'loading="lazy" ', $matches[0] );
+				return str_replace( '<img' . $space, '<img' . $space . 'loading="lazy" ', $matches[0] );
 			}
 
 			return $matches[0];
