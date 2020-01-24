@@ -141,23 +141,30 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 		'/<img\s[^>]+>/',
 		function( array $matches ) use( $content, $context ) {
 			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				$old_html = $matches[0];
-				$new_html = str_replace( '<img', '<img loading="lazy"', $old_html );
+				$tag_html = $matches[0];
 
 				/**
-				 * Filters the tag HTML after adding the `loading` attribute.
+				 * Filters the `loading` attribute value. Default `lazy`.
 				 *
-				 * The variable part of the filter name is the filtered tag's name. For example for `img`
-				 * the filter would become `wp_add_lazy_loading_to_img`.
+				 * Returning `false` or an empty string will not add the attribute.
+				 * Returning `true` will add the default value.
 				 *
 				 * @since (TBD)
 				 *
-				 * @param string $new_html The tag's HTML after adding the attribute.
-				 * @param string $old_html The tag's HTML before adding the attribute.
-				 * @param string $content The HTML content that is being filtered.
+				 * @param string $default The filtered value, defaults to `lazy`.
+				 * @param string $tag_html The tag's HTML.
+				 * @param string $content The HTML containing the image tag.
 				 * @param string $context Optional. Additional context. Defaults to `current_filter()`.
 				 */
-				return apply_filters( 'wp_add_lazy_loading_to_img', $new_html, $old_html, $content, $context );
+				$value = apply_filters( 'wp_set_image_loading_attr', 'lazy', $tag_html, $content, $context );
+
+				if ( $value ) {
+					if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
+						$value = 'lazy';
+					}
+
+					return str_replace( '<img', '<img loading="' . $value . '"', $tag_html );
+				}
 			}
 
 			return $matches[0];
