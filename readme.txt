@@ -27,3 +27,8 @@ Then use a Chromium based browser (Chrome, Opera, latest Android, etc.) and visi
 Things to look for:
 * Obvious bugs, for example images are missing.
 * Try to scroll down as soon as the page loads. All images should be at their places, and the page shouldn't "jump" if/when images are loaded.
+
+**Note to developers**
+This plugin is intended for testing. If the tests are successful, this functionality will be added to WordPress, but the exact code may change, perhaps significantly.
+
+When testing, please also test the filters added by this plugin, and provide feedback at https://github.com/WordPress/wp-lazy-loading or at https://core.trac.wordpress.org/ticket/44427 if the code has been merged.
