@@ -8,7 +8,7 @@
  * Plugin Name: WP Lazy Loading
  * Plugin URI:  https://wordpress.org/plugins/wp-lazy-loading/
  * Description: WordPress feature plugin for testing and experimenting with automatically adding the "loading" HTML attribute.
- * Version:     0.1
+ * Version:     1.0
  * Author:      The WordPress Team
  * Author URI:  https://github.com/WordPress/wp-lazy-loading/
  * License:     GNU General Public License v2 (or later)
