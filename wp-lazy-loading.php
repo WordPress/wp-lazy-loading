@@ -32,10 +32,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
 	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
-		// Before parsing blocks and shortcodes.
-		// TODO: Comments do not support images. Revisit.
-		// TODO: This should not exclude images from dynamic blocks and shortcodes. Look at fixing the filter priority.
-		add_filter( $filter, 'wp_add_lazy_load_attributes', 8 );
+		// After parsing blocks and shortcodes.
+		add_filter( $filter, 'wp_add_lazy_load_attributes', 25 );
 	}
 
 	// The following filters are only needed while this is a feature plugin.
@@ -141,9 +139,32 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 
 	return preg_replace_callback(
 		'/<img\s[^>]+>/',
-		function( array $matches ) {
+		function( array $matches ) use( $content, $context ) {
 			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				return str_replace( '<img', '<img loading="lazy"', $matches[0] );
+				$tag_html = $matches[0];
+
+				/**
+				 * Filters the `loading` attribute value. Default `lazy`.
+				 *
+				 * Returning `false` or an empty string will not add the attribute.
+				 * Returning `true` will add the default value.
+				 *
+				 * @since (TBD)
+				 *
+				 * @param string $default The filtered value, defaults to `lazy`.
+				 * @param string $tag_html The tag's HTML.
+				 * @param string $content The HTML containing the image tag.
+				 * @param string $context Optional. Additional context. Defaults to `current_filter()`.
+				 */
+				$value = apply_filters( 'wp_set_image_loading_attr', 'lazy', $tag_html, $content, $context );
+
+				if ( $value ) {
+					if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
+						$value = 'lazy';
+					}
+
+					return str_replace( '<img', '<img loading="' . $value . '"', $tag_html );
+				}
 			}
 
 			return $matches[0];
@@ -151,4 +172,3 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 		$content
 	);
 }
-
