@@ -33,7 +33,7 @@ function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
 	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
 		// After parsing blocks and shortcodes.
-		add_filter( $filter, 'wp_add_lazy_load_attributes', 25 );
+		add_filter( $filter, 'wp_add_lazy_load_attributes', 8 );
 	}
 
 	// The following filters are only needed while this is a feature plugin.
