@@ -110,7 +110,7 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 	 *
 	 * @since (TBD)
 	 *
-	 * @param boolean $default Defatls value.
+	 * @param boolean $default Default value.
 	 * @param string  $tag_name The tag name.
 	 * @param string  $context Additional context, like the current filter name or the function name from where this was called.
 	 */
