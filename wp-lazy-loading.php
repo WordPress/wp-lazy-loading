@@ -68,6 +68,30 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
 }
 
 /**
+ * Retrieve supported image loading attributes.
+ *
+ * The default supported image loading attributes are 'lazy' and 'eager'. A plugin may
+ * add more by hooking into the {@see 'image_loading_attributes'} filter. The filter
+ * accepts an array of strings.
+ *
+ * @since (TBD)
+ * @see 'image_loading_attributes'
+ * @return array Array of supported image loading attributes.
+ */
+function wp_get_image_loading_attributes() {
+	$attributes = array( 'lazy', 'eager' );
+
+	/**
+	 * Filters the non-default image loading attributes.
+	 *
+	 * @since (TBD)
+	 *
+	 * @param array $new_attributes An array of non-default image loading attributes. Default empty.
+	 */
+	return array_merge( apply_filters( 'image_loading_attributes', array() ), $attributes );
+}
+
+/**
  * Adds loading attribute to an attachment image tag.
  *
  * If merged to core, this should instead happen directly in
@@ -159,7 +183,7 @@ function wp_add_lazy_load_attributes( $content, $context = null ) {
 				$value = apply_filters( 'wp_set_image_loading_attr', 'lazy', $tag_html, $content, $context );
 
 				if ( $value ) {
-					if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
+					if ( ! in_array( $value, wp_get_image_loading_attributes(), true ) ) {
 						$value = 'lazy';
 					}
 
