@@ -217,7 +217,7 @@ function wp_image_add_loading( $image, $image_meta, $attachment_id, $content, $c
 	 * @param string     $content       The HTML containing the image tag.
 	 * @param string     $context       Additional context, typically the current filter.
 	 */
-	$value = apply_filters( 'wp_set_image_loading', 'lazy', $image, $content, $context );
+	$value = apply_filters( 'wp_set_image_loading', 'lazy', $image, $image_meta, $attachment_id, $content, $context );
 
 	if ( $value ) {
 		if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
