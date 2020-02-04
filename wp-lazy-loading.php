@@ -32,13 +32,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
 	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
-		// After parsing blocks and shortcodes.
-		add_filter( $filter, 'wp_add_lazy_load_attributes', 25 );
+		add_filter( $filter, 'wp_filter_content_attachment_images' );
 	}
 
 	// The following filters are only needed while this is a feature plugin.
 	add_filter( 'wp_get_attachment_image_attributes', '_wp_lazy_loading_add_attribute_to_attachment_image' );
 	add_filter( 'get_avatar', '_wp_lazy_loading_add_attribute_to_avatar' );
+
+	// The following relevant filter from core should be removed when merged.
+	remove_filter( 'the_content', 'wp_make_content_images_responsive' );
 }
 
 add_action( 'plugins_loaded', '_wp_lazy_loading_initialize_filters', 1 );
@@ -118,57 +120,112 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 }
 
 /**
- * Add `loading="lazy"` to `img` HTML tags.
- *
- * Currently the "loading" attribute is only supported for `img`, and is enabled by default.
+ * Filters 'img' elements in post content and modifies their markup.
  *
  * @since (TBD)
  *
+ * @see wp_image_add_srcset_and_sizes()
+ * @see wp_image_add_loading()
+ *
  * @param string $content The HTML content to be filtered.
  * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
- * @return string Converted content with 'loading' attributes added to images.
+ * @return string Converted content with images modified.
  */
-function wp_add_lazy_load_attributes( $content, $context = null ) {
+function wp_filter_content_attachment_images( $content, $context = null ) {
 	if ( null === $context ) {
 		$context = current_filter();
 	}
 
-	if ( ! wp_lazy_loading_enabled( 'img', $context ) ) {
+	if ( ! preg_match_all( '/<img [^>]+>/', $content, $matches ) ) {
 		return $content;
 	}
 
-	return preg_replace_callback(
-		'/<img\s[^>]+>/',
-		function( array $matches ) use( $content, $context ) {
-			if ( ! preg_match( '/\sloading\s*=/', $matches[0] ) ) {
-				$tag_html = $matches[0];
+	$selected_images = array();
+	$attachment_ids  = array();
 
-				/**
-				 * Filters the `loading` attribute value. Default `lazy`.
-				 *
-				 * Returning `false` or an empty string will not add the attribute.
-				 * Returning `true` will add the default value.
-				 *
-				 * @since (TBD)
-				 *
-				 * @param string $default The filtered value, defaults to `lazy`.
-				 * @param string $tag_html The tag's HTML.
-				 * @param string $content The HTML containing the image tag.
-				 * @param string $context Optional. Additional context. Defaults to `current_filter()`.
+	foreach ( $matches[0] as $image ) {
+		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
+			$attachment_id = absint( $class_id[1] );
+
+			if ( $attachment_id ) {
+				/*
+				 * If exactly the same image tag is used more than once, overwrite it.
+				 * All identical tags will be replaced later with 'str_replace()'.
 				 */
-				$value = apply_filters( 'wp_set_image_loading_attr', 'lazy', $tag_html, $content, $context );
+				$selected_images[ $image ] = $attachment_id;
 
-				if ( $value ) {
-					if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
-						$value = 'lazy';
-					}
-
-					return str_replace( '<img', '<img loading="' . $value . '"', $tag_html );
-				}
+				// Overwrite the ID when the same image is included more than once.
+				$attachment_ids[ $attachment_id ] = true;
 			}
+		}
+	}
 
-			return $matches[0];
-		},
-		$content
-	);
+	if ( count( $attachment_ids ) > 1 ) {
+		/*
+		 * Warm the object cache with post and meta information for all found
+		 * images to avoid making individual database calls.
+		 */
+		_prime_post_caches( array_keys( $attachment_ids ), false, true );
+	}
+
+	foreach ( $selected_images as $image => $attachment_id ) {
+		$image_meta = wp_get_attachment_metadata( $attachment_id );
+
+		$filtered_image = $image;
+
+		// Add 'srcset' and 'sizes' attributes if applicable.
+		if ( 'the_content' === $context && false === strpos( $filtered_image, ' srcset=' ) ) {
+			$filtered_image = wp_image_add_srcset_and_sizes( $filtered_image, $image_meta, $attachment_id );
+		}
+
+		// Add 'loading' attribute if applicable.
+		if ( wp_lazy_loading_enabled( 'img', $context ) && false === strpos( $filtered_image, ' loading=' ) ) {
+			$filtered_image = wp_image_add_loading( $filtered_image, $image_meta, $attachment_id, $content, $context );
+		}
+
+		return str_replace( $image, $filtered_image, $content );
+	}
+
+	return $content;
+}
+
+/**
+ * Adds a 'loading' attribute to an existing 'img' element.
+ *
+ * @since (TBD)
+ *
+ * @param string $image         An HTML 'img' element to be filtered.
+ * @param array  $image_meta    The image meta data as returned by 'wp_get_attachment_metadata()'.
+ * @param int    $attachment_id Image attachment ID.
+ * @param string $content       The HTML content that the 'img' element is part of.
+ * @param string $context       Additional context to pass to the filters.
+ * @return string Converted 'img' element with 'loading' attribute added.
+ */
+function wp_image_add_loading( $image, $image_meta, $attachment_id, $content, $context ) {
+	/**
+	 * Filters the `loading` attribute value. Default `lazy`.
+	 *
+	 * Returning `false` or an empty string will not add the attribute.
+	 * Returning `true` will add the default value.
+	 *
+	 * @since (TBD)
+	 *
+	 * @param string     $value         The 'loading' attribute value, defaults to `lazy`.
+	 * @param string     $image         The 'img' tag's HTML.
+	 * @param array|null $image_meta    The image meta data as returned by wp_get_attachment_metadata() or null.
+	 * @param int        $attachment_id Image attachment ID of the original image or 0.
+	 * @param string     $content       The HTML containing the image tag.
+	 * @param string     $context       Additional context, typically the current filter.
+	 */
+	$value = apply_filters( 'wp_set_image_loading', 'lazy', $image, $content, $context );
+
+	if ( $value ) {
+		if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
+			$value = 'lazy';
+		}
+
+		return str_replace( '<img', '<img loading="' . $value . '"', $image );
+	}
+
+	return $image;
 }
