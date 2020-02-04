@@ -183,7 +183,7 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 			$filtered_image = wp_image_add_loading( $filtered_image, $image_meta, $attachment_id, $content, $context );
 		}
 
-		return str_replace( $image, $filtered_image, $content );
+		$content = str_replace( $image, $filtered_image, $content );
 	}
 
 	return $content;
