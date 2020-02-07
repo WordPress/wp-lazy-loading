@@ -168,18 +168,21 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 		_prime_post_caches( array_keys( $attachment_ids ), false, true );
 	}
 
+	$add_srcset_sizes = 'the_content' === $context;
+	$add_loading      = wp_lazy_loading_enabled( 'img', $context );
+
 	foreach ( $selected_images as $image => $attachment_id ) {
 		$image_meta = wp_get_attachment_metadata( $attachment_id );
 
 		$filtered_image = $image;
 
 		// Add 'srcset' and 'sizes' attributes if applicable.
-		if ( 'the_content' === $context && false === strpos( $filtered_image, ' srcset=' ) ) {
+		if ( $add_srcset_sizes && false === strpos( $filtered_image, ' srcset=' ) ) {
 			$filtered_image = wp_image_add_srcset_and_sizes( $filtered_image, $image_meta, $attachment_id );
 		}
 
 		// Add 'loading' attribute if applicable.
-		if ( wp_lazy_loading_enabled( 'img', $context ) && false === strpos( $filtered_image, ' loading=' ) ) {
+		if ( $add_loading && false === strpos( $filtered_image, ' loading=' ) ) {
 			$filtered_image = wp_image_add_loading( $filtered_image, $image_meta, $attachment_id, $content, $context );
 		}
 
