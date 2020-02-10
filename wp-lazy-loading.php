@@ -136,7 +136,14 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 		$context = current_filter();
 	}
 
-	if ( ! preg_match_all( '/<img [^>]+>/', $content, $matches ) ) {
+	$add_srcset_sizes = 'the_content' === $context;
+	$add_loading_attr = wp_lazy_loading_enabled( 'img', $context );
+
+	if ( false === strpos( $content, '<img' ) || ( ! $add_srcset_sizes && ! $add_loading_attr ) ) {
+		return $content;
+	}
+
+	if ( ! preg_match_all( '/<img\s[^>]+>/', $content, $matches ) ) {
 		return $content;
 	}
 
@@ -168,9 +175,6 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 		_prime_post_caches( array_keys( $attachment_ids ), false, true );
 	}
 
-	$add_srcset_sizes = 'the_content' === $context;
-	$add_loading      = wp_lazy_loading_enabled( 'img', $context );
-
 	foreach ( $selected_images as $image => $attachment_id ) {
 		$image_meta = wp_get_attachment_metadata( $attachment_id );
 
@@ -182,8 +186,8 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 		}
 
 		// Add 'loading' attribute if applicable.
-		if ( $add_loading && false === strpos( $filtered_image, ' loading=' ) ) {
-			$filtered_image = wp_image_add_loading( $filtered_image, $image_meta, $attachment_id, $content, $context );
+		if ( $add_loading_attr && false === strpos( $filtered_image, ' loading=' ) ) {
+			$filtered_image = wp_image_add_loading_attr( $filtered_image, $image_meta, $attachment_id, $content, $context );
 		}
 
 		$content = str_replace( $image, $filtered_image, $content );
@@ -204,7 +208,7 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
  * @param string $context       Additional context to pass to the filters.
  * @return string Converted 'img' element with 'loading' attribute added.
  */
-function wp_image_add_loading( $image, $image_meta, $attachment_id, $content, $context ) {
+function wp_image_add_loading_attr( $image, $image_meta, $attachment_id, $content, $context ) {
 	/**
 	 * Filters the `loading` attribute value. Default `lazy`.
 	 *
@@ -220,7 +224,7 @@ function wp_image_add_loading( $image, $image_meta, $attachment_id, $content, $c
 	 * @param string     $content       The HTML containing the image tag.
 	 * @param string     $context       Additional context, typically the current filter.
 	 */
-	$value = apply_filters( 'wp_set_image_loading', 'lazy', $image, $image_meta, $attachment_id, $content, $context );
+	$value = apply_filters( 'wp_image_add_loading_attr', 'lazy', $image, $image_meta, $attachment_id, $content, $context );
 
 	if ( $value ) {
 		if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
