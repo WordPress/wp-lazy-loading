@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
 	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
-		add_filter( $filter, 'wp_filter_content_attachment_images' );
+		add_filter( $filter, 'wp_filter_content_images' );
 	}
 
 	// The following filters are only needed while this is a feature plugin.
@@ -120,7 +120,7 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 }
 
 /**
- * Filters 'img' elements in post content and modifies their markup.
+ * Filters 'img' tags in post content and modifies their markup.
  *
  * @since (TBD)
  *
@@ -131,7 +131,7 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
  * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
  * @return string Converted content with images modified.
  */
-function wp_filter_content_attachment_images( $content, $context = null ) {
+function wp_filter_content_images( $content, $context = null ) {
 	if ( null === $context ) {
 		$context = current_filter();
 	}
@@ -176,8 +176,7 @@ function wp_filter_content_attachment_images( $content, $context = null ) {
 	}
 
 	foreach ( $selected_images as $image => $attachment_id ) {
-		$image_meta = wp_get_attachment_metadata( $attachment_id );
-
+		$image_meta     = wp_get_attachment_metadata( $attachment_id );
 		$filtered_image = $image;
 
 		// Add 'srcset' and 'sizes' attributes if applicable.
