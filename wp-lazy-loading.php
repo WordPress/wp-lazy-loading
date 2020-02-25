@@ -8,7 +8,7 @@
  * Plugin Name: WP Lazy Loading
  * Plugin URI:  https://wordpress.org/plugins/wp-lazy-loading/
  * Description: WordPress feature plugin for testing and experimenting with automatically adding the "loading" HTML attribute.
- * Version:     1.0
+ * Version:     1.0.0
  * Author:      The WordPress Team
  * Author URI:  https://github.com/WordPress/wp-lazy-loading/
  * License:     GNU General Public License v2 (or later)
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Initialise filters and actions.
+ * Initialize filters and actions.
  */
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
@@ -52,7 +52,7 @@ add_action( 'plugins_loaded', '_wp_lazy_loading_initialize_filters', 1 );
  * If merged to core, this should instead happen directly in
  * {@see get_avatar()}, as a default attribute.
  *
- * @since 1.0
+ * @since 1.0.0
  * @access private
  * @see get_avatar()
  *
@@ -73,7 +73,7 @@ function _wp_lazy_loading_add_attribute_to_avatar( $avatar ) {
  * If merged to core, this should instead happen directly in
  * {@see wp_get_attachment_image()}, as a default attribute.
  *
- * @since 1.0
+ * @since 1.0.0
  * @access private
  * @see wp_get_attachment_image()
  *
