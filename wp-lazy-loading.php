@@ -122,15 +122,12 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
 /**
  * Filters specific tags in post content and modifies their markup.
  *
- * This function performs the following replacements:
- *
- * * add 'srcset' and 'sizes' attributes to 'img' tags
- * * add 'loading' attributes to 'img' tags
+ * This function adds `srcset`, `sizes`, and `loading` attributes to `img` HTML tags.
  *
  * @since (TBD)
  *
- * @see wp_image_add_srcset_and_sizes()
- * @see wp_image_add_loading()
+ * @see wp_image_tag_add_loading_attr()
+ * @see wp_image_tag_add_srcset_and_sizes_attr()
  *
  * @param string $content The HTML content to be filtered.
  * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
@@ -141,10 +138,9 @@ function wp_filter_content_tags( $content, $context = null ) {
 		$context = current_filter();
 	}
 
-	$add_srcset_sizes = 'the_content' === $context;
 	$add_loading_attr = wp_lazy_loading_enabled( 'img', $context );
 
-	if ( false === strpos( $content, '<img' ) || ( ! $add_srcset_sizes && ! $add_loading_attr ) ) {
+	if ( false === strpos( $content, '<img' ) ) {
 		return $content;
 	}
 
@@ -152,8 +148,11 @@ function wp_filter_content_tags( $content, $context = null ) {
 		return $content;
 	}
 
-	$selected_images = array();
-	$attachment_ids  = array();
+	// List of local images where the attachment_id is known.
+	$attachment_images = array();
+
+	// List of the rest of the images, either local but without attachment_id, or remote.
+	$other_images = array();
 
 	foreach ( $matches[0] as $image ) {
 		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
@@ -164,34 +163,46 @@ function wp_filter_content_tags( $content, $context = null ) {
 				 * If exactly the same image tag is used more than once, overwrite it.
 				 * All identical tags will be replaced later with 'str_replace()'.
 				 */
-				$selected_images[ $image ] = $attachment_id;
-
-				// Overwrite the ID when the same image is included more than once.
-				$attachment_ids[ $attachment_id ] = true;
+				$attachment_images[ $image ] = $attachment_id;
+				continue;
 			}
 		}
+
+		$other_images[ $image ] = true;
 	}
+
+	$attachment_ids = array_unique( array_values( $attachment_images ) );
 
 	if ( count( $attachment_ids ) > 1 ) {
 		/*
 		 * Warm the object cache with post and meta information for all found
 		 * images to avoid making individual database calls.
 		 */
-		_prime_post_caches( array_keys( $attachment_ids ), false, true );
+		_prime_post_caches( $attachment_ids, false, true );
 	}
 
-	foreach ( $selected_images as $image => $attachment_id ) {
-		$image_meta     = wp_get_attachment_metadata( $attachment_id );
+	foreach ( $attachment_images as $image => $attachment_id ) {
 		$filtered_image = $image;
 
 		// Add 'srcset' and 'sizes' attributes if applicable.
-		if ( $add_srcset_sizes && false === strpos( $filtered_image, ' srcset=' ) ) {
-			$filtered_image = wp_image_add_srcset_and_sizes( $filtered_image, $image_meta, $attachment_id );
+		if ( false === strpos( $filtered_image, ' srcset=' ) ) {
+			$filtered_image = wp_image_tag_add_srcset_and_sizes_attr( $filtered_image, $context, $attachment_id );
 		}
 
 		// Add 'loading' attribute if applicable.
 		if ( $add_loading_attr && false === strpos( $filtered_image, ' loading=' ) ) {
-			$filtered_image = wp_image_add_loading_attr( $filtered_image, $image_meta, $attachment_id, $content, $context );
+			$filtered_image = wp_image_tag_add_loading_attr( $filtered_image, $context, $attachment_id );
+		}
+
+		$content = str_replace( $image, $filtered_image, $content );
+	}
+
+	foreach ( $other_images as $image => $value ) {
+		$filtered_image = $image;
+
+		// Add 'loading' attribute if applicable.
+		if ( $add_loading_attr && false === strpos( $filtered_image, ' loading=' ) ) {
+			$filtered_image = wp_image_tag_add_loading_attr( $filtered_image, $context );
 		}
 
 		$content = str_replace( $image, $filtered_image, $content );
@@ -201,18 +212,16 @@ function wp_filter_content_tags( $content, $context = null ) {
 }
 
 /**
- * Adds a 'loading' attribute to an existing 'img' element.
+ * Adds `loading` attribute to an existing `img` HTML tag.
  *
  * @since (TBD)
  *
- * @param string $image         An HTML 'img' element to be filtered.
- * @param array  $image_meta    The image meta data as returned by 'wp_get_attachment_metadata()'.
- * @param int    $attachment_id Image attachment ID.
- * @param string $content       The HTML content that the 'img' element is part of.
+ * @param string $image         The HTML `img` tag where the attribute should be added.
  * @param string $context       Additional context to pass to the filters.
- * @return string Converted 'img' element with 'loading' attribute added.
+ * @param int    $attachment_id Optional. Image attachment ID.
+ * @return string Converted `img` tag with `loading` attribute added.
  */
-function wp_image_add_loading_attr( $image, $image_meta, $attachment_id, $content, $context ) {
+function wp_image_tag_add_loading_attr( $image, $context, $attachment_id = null ) {
 	/**
 	 * Filters the `loading` attribute value. Default `lazy`.
 	 *
@@ -221,14 +230,12 @@ function wp_image_add_loading_attr( $image, $image_meta, $attachment_id, $conten
 	 *
 	 * @since (TBD)
 	 *
-	 * @param string     $value         The 'loading' attribute value, defaults to `lazy`.
-	 * @param string     $image         The 'img' tag's HTML.
-	 * @param array|null $image_meta    The image meta data as returned by wp_get_attachment_metadata() or null.
-	 * @param int        $attachment_id Image attachment ID of the original image or 0.
-	 * @param string     $content       The HTML containing the image tag.
-	 * @param string     $context       Additional context, typically the current filter.
+	 * @param string $value         The 'loading' attribute value, defaults to `lazy`.
+	 * @param string $image         The HTML 'img' element to be filtered.
+	 * @param string $context       Additional context about how the function was called or where the img tag is.
+	 * @param int    $attachment_id Optional. Image attachment ID or `null` if the ID is unknown or the image is not local.
 	 */
-	$value = apply_filters( 'wp_image_add_loading_attr', 'lazy', $image, $image_meta, $attachment_id, $content, $context );
+	$value = apply_filters( 'wp_image_tag_add_loading_attr', 'lazy', $image, $context, $attachment_id );
 
 	if ( $value ) {
 		if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
@@ -236,6 +243,39 @@ function wp_image_add_loading_attr( $image, $image_meta, $attachment_id, $conten
 		}
 
 		return str_replace( '<img', '<img loading="' . $value . '"', $image );
+	}
+
+	return $image;
+}
+
+/**
+ * Adds `srcset` and `sizes` attributes to an existing `img` HTML tag.
+ *
+ * @since (TBD)
+ *
+ * @param string $image         The HTML `img` tag where the attribute should be added.
+ * @param string $context       Additional context to pass to the filters.
+ * @param int    $attachment_id Image attachment ID.
+ * @return string Converted 'img' element with 'loading' attribute added.
+ */
+function wp_image_tag_add_srcset_and_sizes_attr( $image, $context, $attachment_id ) {
+	/**
+	 * Filters whether to add the `srcset` and `sizes` HTML attributes to the img tag. Default `true`.
+	 *
+	 * Returning anything else than `true` will not add the attributes.
+	 *
+	 * @since (TBD)
+	 *
+	 * @param bool   $value         The filtered value, defaults to `true`.
+	 * @param string $image         The HTML `img` tag where the attribute should be added.
+	 * @param string $context       Additional context about how the function was called or where the img tag is.
+	 * @param int    $attachment_id The image attachment ID.
+	 */
+	$add = apply_filters( 'wp_image_tag_add_srcset_and_sizes_attr', true, $image, $context, $attachment_id );
+
+	if ( true === $add ) {
+		$image_meta = wp_get_attachment_metadata( $attachment_id );
+		return wp_image_add_srcset_and_sizes( $image, $image_meta, $attachment_id );
 	}
 
 	return $image;
