@@ -12,11 +12,10 @@
 	stopOnFailure="false"
 	stopOnIncomplete="false"
 	stopOnSkipped="false"
-	syntaxCheck="false"
 	verbose="true"
 	>
 	<testsuites>
-		<testsuite>
+		<testsuite name="unit">
 			<directory suffix=".php">./tests/phpunit/tests/</directory>
 		</testsuite>
 	</testsuites>
