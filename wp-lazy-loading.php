@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function _wp_lazy_loading_initialize_filters() {
 	// The following filters would be merged into core.
-	foreach ( array( 'the_content', 'the_excerpt', 'comment_text', 'widget_text_content' ) as $filter ) {
+	foreach ( array( 'the_content', 'the_excerpt', 'widget_text_content' ) as $filter ) {
 		add_filter( $filter, 'wp_filter_content_tags' );
 	}
 
@@ -104,7 +104,7 @@ function _wp_lazy_loading_add_attribute_to_attachment_image( $attr ) {
  */
 function wp_lazy_loading_enabled( $tag_name, $context ) {
 	// By default add to all 'img' tags.
-	// See https://github.com/whatwg/html/issues/2806
+	// See https://html.spec.whatwg.org/multipage/embedded-content.html#attr-img-loading
 	$default = ( 'img' === $tag_name );
 
 	/**
@@ -126,8 +126,8 @@ function wp_lazy_loading_enabled( $tag_name, $context ) {
  *
  * @since (TBD)
  *
- * @see wp_image_tag_add_loading_attr()
- * @see wp_image_tag_add_srcset_and_sizes_attr()
+ * @see wp_img_tag_add_loading_attr()
+ * @see wp_img_tag_add_srcset_and_sizes_attr()
  *
  * @param string $content The HTML content to be filtered.
  * @param string $context Optional. Additional context to pass to the filters. Defaults to `current_filter()` when not set.
@@ -150,9 +150,6 @@ function wp_filter_content_tags( $content, $context = null ) {
 
 	// List of the unique `img` tags found in $content.
 	$images = array();
-
-	// List of the rest of the images, either local but without attachment_id, or remote.
-	$other_images = array();
 
 	foreach ( $matches[0] as $image ) {
 		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
@@ -187,12 +184,12 @@ function wp_filter_content_tags( $content, $context = null ) {
 
 		// Add 'srcset' and 'sizes' attributes if applicable.
 		if ( $attachment_id > 0 && false === strpos( $filtered_image, ' srcset=' ) ) {
-			$filtered_image = wp_image_tag_add_srcset_and_sizes_attr( $filtered_image, $context, $attachment_id );
+			$filtered_image = wp_img_tag_add_srcset_and_sizes_attr( $filtered_image, $context, $attachment_id );
 		}
 
 		// Add 'loading' attribute if applicable.
 		if ( $add_loading_attr && false === strpos( $filtered_image, ' loading=' ) ) {
-			$filtered_image = wp_image_tag_add_loading_attr( $filtered_image, $context );
+			$filtered_image = wp_img_tag_add_loading_attr( $filtered_image, $context );
 		}
 
 		if ( $filtered_image !== $image ) {
@@ -212,7 +209,7 @@ function wp_filter_content_tags( $content, $context = null ) {
  * @param string $context Additional context to pass to the filters.
  * @return string Converted `img` tag with `loading` attribute added.
  */
-function wp_image_tag_add_loading_attr( $image, $context ) {
+function wp_img_tag_add_loading_attr( $image, $context ) {
 	/**
 	 * Filters the `loading` attribute value. Default `lazy`.
 	 *
@@ -225,7 +222,7 @@ function wp_image_tag_add_loading_attr( $image, $context ) {
 	 * @param string $image   The HTML 'img' element to be filtered.
 	 * @param string $context Additional context about how the function was called or where the img tag is.
 	 */
-	$value = apply_filters( 'wp_image_tag_add_loading_attr', 'lazy', $image, $context );
+	$value = apply_filters( 'wp_img_tag_add_loading_attr', 'lazy', $image, $context );
 
 	if ( $value ) {
 		if ( ! in_array( $value, array( 'lazy', 'eager' ), true ) ) {
@@ -248,7 +245,7 @@ function wp_image_tag_add_loading_attr( $image, $context ) {
  * @param int    $attachment_id Image attachment ID.
  * @return string Converted 'img' element with 'loading' attribute added.
  */
-function wp_image_tag_add_srcset_and_sizes_attr( $image, $context, $attachment_id ) {
+function wp_img_tag_add_srcset_and_sizes_attr( $image, $context, $attachment_id ) {
 	/**
 	 * Filters whether to add the `srcset` and `sizes` HTML attributes to the img tag. Default `true`.
 	 *
@@ -261,7 +258,7 @@ function wp_image_tag_add_srcset_and_sizes_attr( $image, $context, $attachment_i
 	 * @param string $context       Additional context about how the function was called or where the img tag is.
 	 * @param int    $attachment_id The image attachment ID.
 	 */
-	$add = apply_filters( 'wp_image_tag_add_srcset_and_sizes_attr', true, $image, $context, $attachment_id );
+	$add = apply_filters( 'wp_img_tag_add_srcset_and_sizes_attr', true, $image, $context, $attachment_id );
 
 	if ( true === $add ) {
 		$image_meta = wp_get_attachment_metadata( $attachment_id );
