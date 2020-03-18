@@ -52,7 +52,12 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_unfiltered = sprintf( $content, $img, $img_xhtml, $img_html5, $iframe, $img_eager );
 		$content_filtered   = sprintf( $content, $lazy_img, $lazy_img_xhtml, $lazy_img_html5, $iframe, $img_eager );
 
-		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
+		// Do not add srcset and sizes while testing.
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
+
+		$this->assertSame( $content_filtered, wp_filter_content_tags( $content_unfiltered ) );
+
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 
 	/**
@@ -70,11 +75,15 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_unfiltered = sprintf( $content, $img );
 		$content_filtered   = sprintf( $content, $lazy_img );
 
+		// Do not add srcset and sizes while testing.
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
+
 		// Enable globally for all tags.
 		add_filter( 'wp_lazy_loading_enabled', '__return_true' );
 
-		$this->assertSame( $content_filtered, wp_add_lazy_load_attributes( $content_unfiltered ) );
+		$this->assertSame( $content_filtered, wp_filter_content_tags( $content_unfiltered ) );
 		remove_filter( 'wp_lazy_loading_enabled', '__return_true' );
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 
 	/**
@@ -88,10 +97,14 @@ class Tests_Media extends WP_UnitTestCase {
 			%1$s';
 		$content = sprintf( $content, $img );
 
+		// Do not add srcset and sizes while testing.
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
+
 		// Disable globally for all tags.
 		add_filter( 'wp_lazy_loading_enabled', '__return_false' );
 
-		$this->assertSame( $content, wp_add_lazy_load_attributes( $content ) );
+		$this->assertSame( $content, wp_filter_content_tags( $content ) );
 		remove_filter( 'wp_lazy_loading_enabled', '__return_false' );
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 }
