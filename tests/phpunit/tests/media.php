@@ -53,11 +53,11 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_filtered   = sprintf( $content, $lazy_img, $lazy_img_xhtml, $lazy_img_html5, $iframe, $img_eager );
 
 		// Do not add srcset and sizes while testing.
-		add_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 
 		$this->assertSame( $content_filtered, wp_filter_content_tags( $content_unfiltered ) );
 
-		remove_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 
 	/**
@@ -76,14 +76,14 @@ class Tests_Media extends WP_UnitTestCase {
 		$content_filtered   = sprintf( $content, $lazy_img );
 
 		// Do not add srcset and sizes while testing.
-		add_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 
 		// Enable globally for all tags.
 		add_filter( 'wp_lazy_loading_enabled', '__return_true' );
 
 		$this->assertSame( $content_filtered, wp_filter_content_tags( $content_unfiltered ) );
 		remove_filter( 'wp_lazy_loading_enabled', '__return_true' );
-		remove_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 
 	/**
@@ -98,13 +98,13 @@ class Tests_Media extends WP_UnitTestCase {
 		$content = sprintf( $content, $img );
 
 		// Do not add srcset and sizes while testing.
-		add_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 
 		// Disable globally for all tags.
 		add_filter( 'wp_lazy_loading_enabled', '__return_false' );
 
 		$this->assertSame( $content, wp_filter_content_tags( $content ) );
 		remove_filter( 'wp_lazy_loading_enabled', '__return_false' );
-		remove_filter( 'wp_image_tag_add_srcset_and_sizes_attr', '__return_false' );
+		remove_filter( 'wp_img_tag_add_srcset_and_sizes_attr', '__return_false' );
 	}
 }
